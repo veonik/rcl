@@ -31,7 +31,7 @@ impl Lexer {
     }
 
     fn peek(&self) -> Option<Char> {
-        if self.pos+1 >= self.input.len() {
+        if self.pos >= self.input.len() {
             return None
         }
         let s = &self.input[self.pos..(self.pos+1)];
@@ -68,6 +68,13 @@ impl Lexer {
             _ => self.pos
         }
     }
+
+    fn eat_until(&mut self, pos: usize) -> String {
+        let p = if pos > self.input.len() { self.input.len() } else { pos };
+        let res = &self.input[self.pos..p];
+        self.pos = p;
+        res.to_string()
+    }
 }
 
 impl Iterator for Lexer {
@@ -77,22 +84,16 @@ impl Iterator for Lexer {
         match self.peek() {
             Some(Char::Var) => {
                 self.pos += 1;
-                let e = self.end_of_word();
-                let name = &self.input[self.pos..e];
-                self.pos = e;
-                Some(Token::Var{ name: name.to_string() })
+                let p = self.end_of_word();
+                Some(Token::Var{ name: self.eat_until(p) })
             },
             Some(Char::Word) => {
-                let e = self.end_of_word();
-                let contents = &self.input[self.pos..e];
-                self.pos = e;
-                Some(Token::Word { contents: contents.to_string() })
+                let p = self.end_of_word();
+                Some(Token::Word { contents: self.eat_until(p) })
             },
             Some(Char::Space) => {
-                let e = self.end_of_space();
-                let contents = &self.input[self.pos..e];
-                self.pos = e;
-                Some(Token::Whitespace { contents: contents.to_string() })
+                let p = self.end_of_space();
+                Some(Token::Whitespace { contents: self.eat_until(p) })
             },
             Some(Char::String) => {
                 self.pos += 1;
